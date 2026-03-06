@@ -11,7 +11,7 @@ interface PlayerListProps {
 
 export const PlayerList: React.FC<PlayerListProps> = ({ players, onRemovePlayer, onEditPlayer }) => {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-full">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
           <Users size={20} className="text-indigo-500" />
