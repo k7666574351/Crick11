@@ -1,15 +1,21 @@
-import React from 'react';
-import { Player } from '../types';
-import { Trash2, Edit2, Users } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React from "react";
+import { Player } from "../types";
+import { Trash2, Edit2, Users } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface PlayerListProps {
   players: Player[];
   onRemovePlayer: (id: string) => void;
   onEditPlayer: (player: Player) => void;
+  onToggleAvailability: (id: string) => void; // 👈 NEW
 }
 
-export const PlayerList: React.FC<PlayerListProps> = ({ players, onRemovePlayer, onEditPlayer }) => {
+export const PlayerList: React.FC<PlayerListProps> = ({
+  players,
+  onRemovePlayer,
+  onEditPlayer,
+  onToggleAvailability,
+}) => {
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
       <div className="flex items-center justify-between mb-6">
@@ -34,25 +40,48 @@ export const PlayerList: React.FC<PlayerListProps> = ({ players, onRemovePlayer,
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="group flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 hover:bg-white transition-all"
+                className={`group flex items-center justify-between p-4 rounded-xl border transition-all
+                ${
+                  player.isAvailable === false
+                    ? "bg-slate-50 opacity-50"
+                    : "bg-slate-50 hover:border-slate-200 hover:bg-white"
+                }`}
               >
+                {/* Player Info */}
                 <div className="flex-1">
-                  <h3 className="font-bold text-slate-800">{player.name}</h3>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={player.isAvailable !== false}
+                      onChange={() => onToggleAvailability(player.id)}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+
+                    <h3 className="font-bold text-slate-800">{player.name}</h3>
+                  </div>
+
                   <div className="flex gap-3 mt-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
                       Bat: <span className="text-slate-600">{player.batting}</span>
                     </span>
+
                     <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                      Bowl: <span className="text-slate-600">{player.bowling}</span>
+                      Bowl:{" "}
+                      <span className="text-slate-600">{player.bowling}</span>
                     </span>
+
                     <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                      Field: <span className="text-slate-600">{player.fielding}</span>
+                      Field:{" "}
+                      <span className="text-slate-600">{player.fielding}</span>
                     </span>
+
                     <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-500">
                       Total: {player.totalSkill}
                     </span>
                   </div>
                 </div>
+
+                {/* Actions */}
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => onEditPlayer(player)}
@@ -60,6 +89,7 @@ export const PlayerList: React.FC<PlayerListProps> = ({ players, onRemovePlayer,
                   >
                     <Edit2 size={16} />
                   </button>
+
                   <button
                     onClick={() => onRemovePlayer(player.id)}
                     className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"

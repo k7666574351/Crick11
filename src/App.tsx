@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-
+import { useEffect } from "react";
 import { useState } from "react";
 import { Player, Team, MatchInfo } from "./types";
 import { PlayerForm } from "./components/PlayerForm";
@@ -32,6 +32,7 @@ import {
 } from "@clerk/clerk-react";
 import { supabase } from "./lib/supabase";
 import { useUser } from "@clerk/clerk-react";
+import { splitTeams } from "./utils/splitTeams";
 
 // Example data
 const INITIAL_PLAYERS: Player[] = [
@@ -151,18 +152,35 @@ type Tab = "splitter" | "score" | "stats";
 
 export default function App() {
   const { user } = useUser();
+
   const [activeTab, setActiveTab] = useState<Tab>("splitter");
-  const [players, setPlayers] = useState<Player[]>(INITIAL_PLAYERS);
-  const [teamA, setTeamA] = useState<Team>({
-    name: "Red Warriors",
-    players: [],
-    totalSkill: 0,
+  const [players, setPlayers] = useState<Player[]>(() => {
+    const saved = localStorage.getItem("players");
+    return saved ? JSON.parse(saved) : INITIAL_PLAYERS;
   });
-  const [teamB, setTeamB] = useState<Team>({
-    name: "Blue Titans",
-    players: [],
-    totalSkill: 0,
+
+  useEffect(() => {
+    localStorage.setItem("players", JSON.stringify(players));
+  }, [players]);
+  const [teamA, setTeamA] = useState<Team>(() => {
+    const saved = localStorage.getItem("teamA");
+    return saved
+      ? JSON.parse(saved)
+      : { name: "Red Warriors", players: [], totalSkill: 0 };
   });
+  const [teamB, setTeamB] = useState<Team>(() => {
+    const saved = localStorage.getItem("teamB");
+    return saved
+      ? JSON.parse(saved)
+      : { name: "Blue Titans", players: [], totalSkill: 0 };
+  });
+  useEffect(() => {
+    localStorage.setItem("teamA", JSON.stringify(teamA));
+  }, [teamA]);
+
+  useEffect(() => {
+    localStorage.setItem("teamB", JSON.stringify(teamB));
+  }, [teamB]);
   const [matchInfo, setMatchInfo] = useState<MatchInfo>({
     matchName: "Sunday Morning Turf",
     groundName: "HSR Layout Turf",
@@ -181,6 +199,7 @@ export default function App() {
       matches: 0,
       runs: 0,
       wickets: 0,
+      isAvailable: true,
     };
     setPlayers([...players, newPlayer]);
   };
@@ -198,28 +217,41 @@ export default function App() {
     }
   };
 
-  const handleGenerateTeams = () => {
-    if (players.length < 2) return;
-    const { teamA: a, teamB: b } = generateBalancedTeams(
-      players,
-      teamA.name,
-      teamB.name,
+  const toggleAvailability = (playerId: string) => {
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.id === playerId ? { ...p, isAvailable: !p.isAvailable } : p,
+      ),
     );
-    setTeamA(a);
-    setTeamB(b);
+  };
 
-    saveMatch(a, b);
+  const handleGenerateTeams = () => {
+    const availablePlayers = players.filter((p) => p.isAvailable !== false);
+
+    const { teamA: newTeamA, teamB: newTeamB } = splitTeams(availablePlayers);
+    setTeamA(newTeamA);
+    setTeamB(newTeamB);
+
+    setTeamAPlayers(newTeamA.players);
+    setTeamBPlayers(newTeamB.players);
   };
 
   const handleShuffleTeams = () => {
-    if (players.length < 2) return;
+    const availablePlayers = players.filter((p) => p.isAvailable !== false);
+
+    if (availablePlayers.length < 2) return;
+
     const { teamA: a, teamB: b } = shuffleTeams(
-      players,
+      availablePlayers,
       teamA.name,
       teamB.name,
     );
+
     setTeamA(a);
     setTeamB(b);
+
+    setTeamAPlayers(a.players);
+    setTeamBPlayers(b.players);
   };
 
   const handleResetTeams = () => {
@@ -231,27 +263,29 @@ export default function App() {
     if (type === "A") setTeamA({ ...teamA, name: newName });
     else setTeamB({ ...teamB, name: newName });
   };
+  const [teamAPlayers, setTeamAPlayers] = useState<Player[]>(teamA.players);
+  const [teamBPlayers, setTeamBPlayers] = useState<Player[]>(teamB.players);
 
   async function saveMatch(teamA: Team, teamB: Team) {
-  console.log("Saving match...");
+    console.log("Saving match...");
 
-  const { error } = await supabase.from("matches").insert([
-    {
-      user_id: user?.id,
-      match_name: matchInfo.matchName,
-      ground_name: matchInfo.groundName,
-      match_date: matchInfo.matchDate,
-      team_a: teamA,
-      team_b: teamB
+    const { error } = await supabase.from("matches").insert([
+      {
+        user_id: user?.id,
+        match_name: matchInfo.matchName,
+        ground_name: matchInfo.groundName,
+        match_date: matchInfo.matchDate,
+        team_a: teamA,
+        team_b: teamB,
+      },
+    ]);
+
+    if (error) {
+      console.error("Error saving match:", error);
+    } else {
+      console.log("Match saved successfully");
     }
-  ]);
-
-  if (error) {
-    console.error("Error saving match:", error);
-  } else {
-    console.log("Match saved successfully");
   }
-}
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100">
@@ -359,6 +393,7 @@ export default function App() {
                   players={players}
                   onRemovePlayer={handleRemovePlayer}
                   onEditPlayer={handleEditPlayer}
+                  onToggleAvailability={toggleAvailability}
                 />
               </div>
 
@@ -425,7 +460,12 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
             >
               {teamA.players.length > 0 ? (
-                <ScoreCounter teamA={teamA} teamB={teamB} />
+                <ScoreCounter
+                  teamA={{ ...teamA, players: teamAPlayers }}
+                  teamB={{ ...teamB, players: teamBPlayers }}
+                  setTeamAPlayers={setTeamAPlayers}
+                  setTeamBPlayers={setTeamBPlayers}
+                />
               ) : (
                 <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
                   <Target size={48} className="mx-auto mb-4 text-slate-200" />
@@ -454,7 +494,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <PlayerStats players={players} />
+              <PlayerStats players={[...teamAPlayers, ...teamBPlayers]} />
             </motion.div>
           )}
         </AnimatePresence>
