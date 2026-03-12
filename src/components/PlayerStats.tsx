@@ -116,15 +116,19 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({ players }) => {
                       <td className="px-6 py-4 font-bold text-slate-700">
                         {player.name}
                       </td>
+
                       <td className="px-6 py-4 text-slate-500">
-                        {player.matches || Math.floor(Math.random() * 20) + 5}
+                        {player.matches ?? 0}
                       </td>
+
                       <td className="px-6 py-4 text-slate-500">
-                        {player.runs || Math.floor(Math.random() * 500) + 100}
+                        {player.runs ?? 0}
                       </td>
+
                       <td className="px-6 py-4 text-slate-500">
-                        {player.wickets || Math.floor(Math.random() * 15)}
+                        {player.wickets ?? 0}
                       </td>
+
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
