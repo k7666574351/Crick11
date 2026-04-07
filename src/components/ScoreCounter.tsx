@@ -38,8 +38,10 @@ export const ScoreCounter: React.FC<ScoreCounterProps> = ({
   }, [score]);
 
   const [battingTeam, setBattingTeam] = useState<"A" | "B">("A");
+    const [ballHistory, setBallHistory] = useState<string[]>([]);
   const [totalOvers, setTotalOvers] = useState(5);
   const [firstInningsRuns, setFirstInningsRuns] = useState<number | null>(null);
+
 
   const currentBattingTeam = battingTeam === "A" ? teamA : teamB;
   const currentBowlingTeam = battingTeam === "A" ? teamB : teamA;
@@ -64,49 +66,7 @@ export const ScoreCounter: React.FC<ScoreCounterProps> = ({
       nonStrikerId: prev.strikerId,
     }));
   };
-
   const addRuns = (r: number) => {
-    const addWide = () => {
-      // do not allow scoring if overs finished
-      if (score.balls >= totalOvers * 6) return;
-      if (!score.strikerId) {
-        alert("Select striker before scoring");
-        return;
-      }
-      setScore((prev) => {
-        const newRuns = prev.runs + 1;
-
-        // update first innings score if chasing
-        if (battingTeam === "A" && prev.balls === totalOvers * 6 - 1) {
-          setFirstInningsRuns(newRuns);
-        }
-
-        return {
-          ...prev,
-          runs: newRuns,
-        };
-      });
-
-      // update bowler runs conceded
-      if (score.bowlerId) {
-        const updateBowler = (players: Player[]) =>
-          players.map((p) => {
-            if (p.id === score.bowlerId) {
-              return {
-                ...p,
-                runsConceded: (p.runsConceded || 0) + 1,
-              };
-            }
-            return p;
-          });
-
-        if (battingTeam === "A") {
-          setTeamBPlayers(updateBowler);
-        } else {
-          setTeamAPlayers(updateBowler);
-        }
-      }
-    };
     // stop if overs finished
     if (score.balls >= totalOvers * 6) return;
 
@@ -188,6 +148,7 @@ export const ScoreCounter: React.FC<ScoreCounterProps> = ({
         nonStrikerId: newNonStriker,
       };
     });
+    setBallHistory((prev) => [...prev, String(r)]);
   };
 
   const addWide = () => {
@@ -197,7 +158,6 @@ export const ScoreCounter: React.FC<ScoreCounterProps> = ({
     setScore((prev) => {
       const newRuns = prev.runs + 1;
 
-      // update first innings score if chasing
       if (battingTeam === "A" && prev.balls === totalOvers * 6 - 1) {
         setFirstInningsRuns(newRuns);
       }
@@ -227,45 +187,53 @@ export const ScoreCounter: React.FC<ScoreCounterProps> = ({
         setTeamAPlayers(updateBowler);
       }
     }
+
+    setBallHistory((prev) => [...prev, "Wd"]);
   };
+
   const addWicket = () => {
     if (score.balls >= totalOvers * 6) return;
     if (!score.bowlerId) return;
-    const updateBowler = (players: Player[]) =>
-      players.map((p) => {
-        if (p.id === score.bowlerId) {
-          return {
-            ...p,
-            wickets: (p.wickets || 0) + 1,
-            ballsBowled: (p.ballsBowled || 0) + 1,
-          };
-        }
-        return p;
-      });
 
-    if (battingTeam === "A") {
-      setTeamBPlayers(updateBowler);
-    } else {
-      setTeamAPlayers(updateBowler);
-    }
+  const updateBowler = (players: Player[]) =>
+    players.map((p) => {
+      if (p.id === score.bowlerId) {
+        return {
+          ...p,
+          wickets: (p.wickets ?? 0) + 1,
+          ballsBowled: (p.ballsBowled ?? 0) + 1,
+        };
+      }
+      return p;
+    });
 
-    setScore((prev) => ({
-      ...prev,
-      wickets: prev.wickets + 1,
-      balls: prev.balls + 1,
-      strikerId: null,
-    }));
+  if (battingTeam === "A") {
+    setTeamBPlayers(updateBowler);
+  } else {
+    setTeamAPlayers(updateBowler);
+  }
+
+  setScore((prev) => ({
+    ...prev,
+    wickets: prev.wickets + 1,
+    balls: prev.balls + 1,
+    strikerId: null,
+  }));
+
+    setBallHistory((prev) => [...prev, "W"]);
   };
 
   const resetScore = () => {
-    setScore({
-      runs: 0,
-      wickets: 0,
-      balls: 0,
-      strikerId: null,
-      nonStrikerId: null,
-      bowlerId: null,
-    });
+  setScore({
+    runs: 0,
+    wickets: 0,
+    balls: 0,
+    strikerId: null,
+    nonStrikerId: null,
+    bowlerId: null,
+  });
+
+    setBallHistory([]);
   };
 
   const formatOvers = (balls: number) => {
@@ -333,6 +301,29 @@ export const ScoreCounter: React.FC<ScoreCounterProps> = ({
             <p className="text-slate-500 font-medium mt-1">
               Overs: {formatOvers(score.balls)} / {totalOvers}
             </p>
+            <div className="mt-4">
+              <p className="text-xs font-bold text-slate-400 uppercase mb-2">
+                This Over
+              </p>
+
+              <div className="flex gap-2 flex-wrap">
+                {ballHistory.slice(-6).map((b, idx) => (
+                  <span
+                    key={idx}
+                    className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold
+        ${
+          b === "W"
+            ? "bg-rose-100 text-rose-600"
+            : b === "Wd"
+              ? "bg-amber-100 text-amber-600"
+              : "bg-slate-100 text-slate-700"
+        }`}
+                  >
+                    {b}
+                  </span>
+                ))}
+              </div>
+            </div>
 
             {firstInningsRuns !== null && battingTeam === "B" && (
               <div className="mt-1">

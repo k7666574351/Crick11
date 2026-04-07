@@ -21,6 +21,9 @@ export interface Player {
   overs?: number;
   economy?: number;
 
+  runsConceded?: number;
+  ballsBowled?: number;
+
   // Fielding
   catches?: number;
 

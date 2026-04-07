@@ -99,12 +99,16 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({ players }) => {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50">
+                  <tr className="text-[10px] font-black text-slate-400 uppercase">
                     <th className="px-6 py-4">Player</th>
                     <th className="px-6 py-4">Matches</th>
                     <th className="px-6 py-4">Runs</th>
                     <th className="px-6 py-4">Wickets</th>
-                    <th className="px-6 py-4">Skill Index</th>
+                    <th className="px-6 py-4">Balls</th>
+                    <th className="px-6 py-4">4s</th>
+                    <th className="px-6 py-4">6s</th>
+                    <th className="px-6 py-4">Runs Conceded</th>
+                    <th className="px-6 py-4">Balls Bowled</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -129,20 +133,24 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({ players }) => {
                         {player.wickets ?? 0}
                       </td>
 
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-indigo-500"
-                              style={{
-                                width: `${(player.totalSkill / 30) * 100}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs font-bold text-indigo-600">
-                            {player.totalSkill}
-                          </span>
-                        </div>
+                      <td className="px-6 py-4 text-slate-500">
+                        {player.ballsFaced ?? 0}
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-500">
+                        {player.fours ?? 0}
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-500">
+                        {player.sixes ?? 0}
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-500">
+                        {player.runsConceded ?? 0}
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-500">
+                        {player.ballsBowled ?? 0}
                       </td>
                     </tr>
                   ))}

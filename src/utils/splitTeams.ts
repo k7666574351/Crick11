@@ -5,14 +5,22 @@ export const splitTeams = (players: Player[]) => {
 
   const mid = Math.ceil(shuffled.length / 2);
 
+  const calculateTeamSkill = (teamPlayers: Player[]) =>
+    teamPlayers.reduce((sum, p) => sum + (p.totalSkill || 0), 0);
+
+  const teamAPlayers = shuffled.slice(0, mid);
+  const teamBPlayers = shuffled.slice(mid);
+
   const teamA: Team = {
     name: "Team A",
-    players: shuffled.slice(0, mid),
+    players: teamAPlayers,
+    totalSkill: calculateTeamSkill(teamAPlayers),
   };
 
   const teamB: Team = {
     name: "Team B",
-    players: shuffled.slice(mid),
+    players: teamBPlayers,
+    totalSkill: calculateTeamSkill(teamBPlayers),
   };
 
   return { teamA, teamB };
